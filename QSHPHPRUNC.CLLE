@@ -1,42 +1,34 @@
-             PGM        PARM(&PYSCRDIR &SCRIPTFILE &ARGS &PYVERSION +
-                          &PYPATH &SETPKGPATH &USEVENV &VENVPATH +
-                          &DSPSTDOUT &LOGSTDOUT &PRTSTDOUT +
-                          &DLTSTDOUT &IFSSTDOUT &IFSFILE &IFSOPT +
-                          &CCSID &PRTSPLF &PRTUSRDTA &PRTTXT +
-                          &PRTHOLD &PRTOUTQALL &OUTFILE &MBROPT +
-                          &PASEJOBNAM &DEBUGCMD &CHGSCRDIR)
+             PGM        PARM(&PHPSCRDIR &SCRIPTFILE &ARGS &PHPPATH +
+                          &SETPKGPATH &DSPSTDOUT &LOGSTDOUT +
+                          &PRTSTDOUT &DLTSTDOUT &IFSSTDOUT &IFSFILE +
+                          &IFSOPT &CCSID &PRTSPLF &PRTUSRDTA +
+                          &PRTTXT &PRTHOLD &PRTOUTQALL &OUTFILE +
+                          &MBROPT &PASEJOBNAM &DEBUGCMD &CHGSCRDIR)
 
-             DCL        VAR(&PASEJOBNAM) TYPE(*CHAR) LEN(10)
-             DCL        VAR(&CHGSCRDIR) TYPE(*CHAR) LEN(4)    /* 1.0.20 */
-             DCL        VAR(&CHGDIRCMD) TYPE(*CHAR) LEN(255)  /* 1.0.20 */
-             DCL        VAR(&DEBUGCMD) TYPE(*CHAR) LEN(4)
-             DCL        VAR(&USEVENV) TYPE(*CHAR) LEN(4)
-             DCL        VAR(&VENVPATH) TYPE(*CHAR) LEN(255)
-             DCL        VAR(&VENVACT) TYPE(*CHAR) LEN(300)
-             DCL        VAR(&VENVDEACT) TYPE(*CHAR) LEN(300)
-             DCL        VAR(&MBROPT) TYPE(*CHAR) LEN(10)
-             DCL        VAR(&OUTFILE) TYPE(*CHAR) LEN(20)
-             DCL        VAR(&OUTFILPATH) TYPE(*CHAR) LEN(255)
              DCL        VAR(&OFILE) TYPE(*CHAR) LEN(10)
              DCL        VAR(&OLIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&DEBUGCMD) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&MBROPT) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OUTFILE) TYPE(*CHAR) LEN(20)
              DCL        VAR(&PRTHOLD) TYPE(*CHAR) LEN(4)
              DCL        VAR(&PRTOUTQALL) TYPE(*CHAR) LEN(20)
              DCL        VAR(&PRTOUTQ) TYPE(*CHAR) LEN(10)
              DCL        VAR(&PRTOUTQLIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&PASEJOBNAM) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&CHGSCRDIR) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&CHGDIRCMD) TYPE(*CHAR) LEN(255)
              DCL        VAR(&SETPKGPATH) TYPE(*CHAR) LEN(4)
              DCL        VAR(&CCSID) TYPE(*CHAR) LEN(10)
-             DCL        VAR(&PYSCRDIR) TYPE(*CHAR) LEN(255)
-             DCL        VAR(&PYPATH) TYPE(*CHAR) LEN(255)
-             DCL        VAR(&PYEXE) TYPE(*CHAR) LEN(100)
-             DCL        VAR(&PYVERSION) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&PHPSCRDIR) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&PHPPATH) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&PHPEXE) TYPE(*CHAR) LEN(100)
              DCL        VAR(&SCRIPTFILE) TYPE(*CHAR) LEN(255)
-             DCL        VAR(&SCRIPTFULL) TYPE(*CHAR) LEN(255) /* 1.0.20 */
              DCL        VAR(&SCRIPTSTR) TYPE(*CHAR) LEN(1)
              DCL        VAR(&ARGS) TYPE(*CHAR) LEN(8002)
              DCL        VAR(&ARGS2) TYPE(*CHAR) LEN(8000)
              DCL        VAR(&CT) TYPE(*DEC) STG(*AUTO) LEN(3 0)
              DCL        VAR(&PRTTEXT) TYPE(*CHAR) LEN(30) +
-                          VALUE('Python Script Stdout')
+                          VALUE('PHP Script Stdout')
              DCL        VAR(&APPDIR) TYPE(*CHAR) LEN(255)
              DCL        VAR(&CMD) TYPE(*CHAR) LEN(5000)
              DCL        VAR(&STDOUTFILE) TYPE(*CHAR) LEN(255)
@@ -48,7 +40,7 @@
              DCL        VAR(&JOBNBR) TYPE(*CHAR) LEN(6)
              DCL        VAR(&TEMPDIR) TYPE(*CHAR) LEN(255) +
                           VALUE('/tmp')
-             DCL        VAR(&PYTEMP) TYPE(*CHAR) LEN(255) +
+             DCL        VAR(&PHPTEMP) TYPE(*CHAR) LEN(255) +
                           VALUE('/tmp/qsh')
              DCL        VAR(&QSHRTN) TYPE(*DEC) LEN(5 0)
              DCL        VAR(&QSHRTNC) TYPE(*CHAR) LEN(5)
@@ -65,7 +57,7 @@
              DCL        VAR(&IFSSTDOUT) TYPE(*CHAR) LEN(4)
              DCL        VAR(&IFSOPT) TYPE(*CHAR) LEN(10)
              DCL        VAR(&IFSFILE) TYPE(*CHAR) LEN(255)
-             DCL        VAR(&PYPATHSEP) TYPE(*CHAR) LEN(1) VALUE(' ') /* 1.0.19 */
+             DCL        VAR(&PHPPATHSEP) TYPE(*CHAR) LEN(1) VALUE(' ')
 
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERRORS))
 
@@ -82,57 +74,24 @@
              CHGVAR     VAR(&OLIB) VALUE(%SST(&OUTFILE 11 10))
 
 /*----------------------------------------------------------------------------*/
-/* Set virtual env activate and deactivate commands if using venv             */
+/* If default PHP path data area, retreive from data area */
 /*----------------------------------------------------------------------------*/
-
-             /* Set the activate and deactivate command line values */
-             IF         COND(&USEVENV *EQ *YES) THEN(DO)
-             CHGVAR     VAR(&VENVACT) VALUE('source' |> &VENVPATH |< +
-                          '/bin/activate;')
-             CHGVAR     VAR(&VENVDEACT) VALUE(';deactivate')
-
-             /* If env path blank, bail out */
-             IF         COND(&VENVPATH *EQ ' ') THEN(DO)
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Virtual +
-                          environment base path cannot be blank') +
-                          MSGTYPE(*ESCAPE)
+             IF         COND(&PHPPATH *EQ *DEFAULT) THEN(DO)
+             RTVDTAARA  DTAARA(QSHONI/PHPPATH *ALL) RTNVAR(&PHPPATH)
+             /* No specific PHP path iif *DEFAULT and no PHPPATH data area found */
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+             CHGVAR     VAR(&PHPPATH) VALUE(' ')
              ENDDO
-
-             /* Make sure venv exists */
-             QSHIFSCHK   FILNAM(&VENVPATH)
-             /* EXISTS, DO NOTHING SPECIAL */
-             MONMSG     MSGID(CPF9897) EXEC(DO)
-             ENDDO
-
-             /* VENV PATH NOT FOUND. BAIL OUT */
-             MONMSG     MSGID(CPF9898) EXEC(DO)
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
-                          MSGDTA('Virtual environment base path' +
-                          |> &VENVPATH |> 'not found') +
-                          MSGTYPE(*ESCAPE)
-             ENDDO
-
-             /* Log environment name in the joblog */
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('VENV: Using +
-                          Python virtual environment' |> &VENVPATH) +
-                          TOPGMQ(*SAME) MSGTYPE(*DIAG)
 
              ENDDO
 
 /*----------------------------------------------------------------------------*/
-/* If default python path data area, retreive from data area */
+/* If PHPPATH <> '', add path separator because we will prefix PHP command    */
+/* Otherwise we don't need a path separator because we will call PHP          */
+/* without a path qualifier.                                                  */
 /*----------------------------------------------------------------------------*/
-             IF         COND(&PYPATH *EQ *DEFAULT) THEN(DO)
-             RTVDTAARA  DTAARA(QSHONI/PYPATH *ALL) RTNVAR(&PYPATH)
-             ENDDO
-
-/*----------------------------------------------------------------------------*/
-/* If PYPATH <> ' ', add path separator because we will prefix Python command */
-/* Otherwise we don't need a path separator because we will call Python       */
-/* without a path qualifier. V1.0.19                                          */
-/*----------------------------------------------------------------------------*/
-             IF         COND(&PYPATH *NE ' ') THEN(DO)
-             CHGVAR     VAR(&PYPATHSEP) VALUE('/')
+             IF         COND(&PHPPATH *NE ' ') THEN(DO)
+             CHGVAR     VAR(&PHPPATHSEP) VALUE('/')
              ENDDO
 
 /*----------------------------------------------------------------------------*/
@@ -260,22 +219,9 @@
                           200) |< '"'))
 
 /*----------------------------------------------------------------------------*/
-/* Set python executable          */
-/* Added PYPATHSEP - V1.0.19      */
+/* Set PHP executable */
 /*----------------------------------------------------------------------------*/
-             IF         COND(&PYVERSION *EQ '2') THEN(CHGVAR +
-                          VAR(&PYEXE) VALUE(&PYPATH |< &PYPATHSEP |< 'python2'))
-             IF         COND(&PYVERSION *EQ '2.7') THEN(CHGVAR +
-                          VAR(&PYEXE) VALUE(&PYPATH |< &PYPATHSEP |< 'python2.7'))
-             IF         COND(&PYVERSION *EQ '3') THEN(CHGVAR +
-                          VAR(&PYEXE) VALUE(&PYPATH |< &PYPATHSEP |< 'python3'))
-             IF         COND(&PYVERSION *EQ '3.6') THEN(CHGVAR +
-                          VAR(&PYEXE) VALUE(&PYPATH |< &PYPATHSEP |< 'python3.6'))
-             IF         COND(&PYVERSION *EQ '3.9') THEN(CHGVAR +
-                          VAR(&PYEXE) VALUE(&PYPATH |< &PYPATHSEP |< 'python3.9'))
-             /* Catch all set to python3 if blank or invalid version passed */
-             IF         COND(&PYEXE *EQ ' ') THEN(CHGVAR +
-                          VAR(&PYEXE) VALUE(&PYPATH |< &PYPATHSEP |< 'python3'))
+ CHGVAR     VAR(&PHPEXE) VALUE(&PHPPATH |< &PHPPATHSEP |< 'php')
 
 /*----------------------------------------------------------------------------*/
 /* Make sure QSHONITMP library and IFS directory created */
@@ -302,14 +248,14 @@
 /*----------------------------------------------------------------------------*/
 /* Make sure /tmp/qsh exist for logs */
 /*----------------------------------------------------------------------------*/
-             QSHIFSCHK   FILNAM(&PYTEMP)
+             QSHIFSCHK   FILNAM(&PHPTEMP)
              /* EXISTS, DO NOTHING SPECIAL */
              MONMSG     MSGID(CPF9897) EXEC(DO)
              ENDDO
 
              /* DOES NOT EXIST. BAIL OUT */
              MONMSG     MSGID(CPF9898) EXEC(DO)
-             MKDIR      DIR(&PYTEMP) DTAAUT(*RWX) OBJAUT(*ALL)
+             MKDIR      DIR(&PHPTEMP) DTAAUT(*RWX) OBJAUT(*ALL)
              ENDDO
 
 /*----------------------------------------------------------------------------*/
@@ -323,68 +269,37 @@
              /* If path starts with slash do not use dtaara  */
              CHGVAR     VAR(&SCRIPTSTR) VALUE(%SST(&SCRIPTFILE 1 1))
 
-             /* If cur py dir set and script file has no slash / */
-             /* concatenate py dir with script file name         */
-             IF         COND(&PYSCRDIR *NE ' ' *AND &SCRIPTSTR *NE +
+             /* If cur php dir set and script file has no slash / */
+             /* concatenate php dir with script file name         */
+             IF         COND(&PHPSCRDIR *NE ' ' *AND &SCRIPTSTR *NE +
                           '/') THEN(DO)
-
-             /* Build full path to script for existence check */
-             CHGVAR     VAR(&SCRIPTFULL) VALUE(&PYSCRDIR |< '/' +
-                          |< &SCRIPTFILE)
-
-             /* Qualify script dir if not changing directory to script dir  */
-             IF         COND(&CHGSCRDIR *NE *YES) THEN(DO)
-             CHGVAR     VAR(&SCRIPTFILE) VALUE(&PYSCRDIR |< '/' +
+             CHGVAR     VAR(&SCRIPTFILE) VALUE(&PHPSCRDIR |< '/' +
                           |< &SCRIPTFILE)
              ENDDO
 
-             /* Don't qualify script file dir if changing directory to script dir  */
-             /* because we will be in the correct directory already.          */
-             IF         COND(&CHGSCRDIR *EQ *YES) THEN(DO)
-             CHGVAR     VAR(&SCRIPTFILE) VALUE(&SCRIPTFILE)
-             ENDDO
-
-             ENDDO
-
 /*----------------------------------------------------------------------------*/
-/* Make sure python script exists */
+/* Make sure PHP script exists */
 /*----------------------------------------------------------------------------*/
-             QSHIFSCHK  FILNAM(&SCRIPTFULL)
+             QSHIFSCHK  FILNAM(&SCRIPTFILE)
              /* EXISTS, DO NOTHING SPECIAL */
              MONMSG     MSGID(CPF9897) EXEC(DO)
              ENDDO
 
              /* DOES NOT EXIST. BAIL OUT */
              MONMSG     MSGID(CPF9898) EXEC(DO)
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Python +
-                          script file' |> &SCRIPTFULL |> 'does not +
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('PHP +
+                          script file' |> &SCRIPTFILE |> 'does not +
                           exist') MSGTYPE(*ESCAPE)
              ENDDO
 
 /*----------------------------------------------------------------------------*/
-/* Append change directory command to python script file if needed            */
+/* Build PHP command call */
 /*----------------------------------------------------------------------------*/
-             IF         COND(&CHGSCRDIR *NE *YES) THEN(DO)
-             CHGVAR     VAR(&CHGDIRCMD) VALUE(' ')
-             ENDDO
-             IF         COND(&CHGSCRDIR *EQ *YES) THEN(DO)
-             CHGVAR     VAR(&CHGDIRCMD) VALUE('cd' |> &PYSCRDIR |< ';')
-             ENDDO
-
-/*----------------------------------------------------------------------------*/
-/* Build python command call with parms for venv is *YES */
-/*----------------------------------------------------------------------------*/
-             IF         COND(&USEVENV *NE *YES) THEN(DO)
-             CHGVAR     VAR(&CMD) VALUE(&CHGDIRCMD |< &PYEXE |> &SCRIPTFILE |> +
+             CHGVAR     VAR(&CMD) VALUE(&PHPEXE |> &SCRIPTFILE |> +
                           &ARGS2)
-             ENDDO
-             IF         COND(&USEVENV *EQ *YES) THEN(DO)
-             CHGVAR     VAR(&CMD) VALUE(&VENVACT |< &CHGDIRCMD |< &PYEXE |> &SCRIPTFILE |> +
-                          &ARGS2 |< &VENVDEACT)
-             ENDDO
 
 /*----------------------------------------------------------------------------*/
-/* Call QSHEXEC command to run python script via Qshell */
+/* Call QSHEXEC command to run PHP script via Qshell */
 /*----------------------------------------------------------------------------*/
              IF         COND(&DEBUGCMD *EQ *YES) THEN(DO)
            ? QSHONI/QSHEXEC CMDLINE(&CMD) SETPKGPATH(&SETPKGPATH) +
@@ -416,8 +331,8 @@
              ENDDO
 
  NORMAL:
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Python +
-                          script' |> &SCRIPTFULL |> 'completed +
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('PHP +
+                          script' |> &SCRIPTFILE |> 'completed +
                           successfully with no errors') MSGTYPE(*COMP)
              RETURN
 
@@ -426,7 +341,7 @@
 /*----------------------------------------------------------------------------*/
  ERRORS:
 
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Python +
-                          script' |> &SCRIPTFULL |> 'failed. See +
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('PHP +
+                          script' |> &SCRIPTFILE |> 'failed. See +
                           the joblog or stdout log') MSGTYPE(*ESCAPE)
              ENDPGM

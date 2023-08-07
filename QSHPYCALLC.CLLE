@@ -4,8 +4,21 @@
                           &DLTSTDOUT &IFSSTDOUT &IFSFILE &IFSOPT +
                           &CCSID &PRTSPLF &PRTUSRDTA &PRTTXT +
                           &PRTHOLD &PRTOUTQALL &OUTFILE &MBROPT +
-                          &PASEJOBNAM &DEBUGCMD &CHGSCRDIR)
+                          &PASEJOBNAM &DEBUGCMD &CHGSCRDIR +
+                          &RETURN01 &RETURN02 &RETURN03 &RETURN04 +
+                          &RETURN05 &RETURN06 &RETURN07 &RETURN08 +
+                          &RETURN09 &RETURN10)
 
+             DCL        VAR(&RETURN01) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN02) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN03) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN04) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN05) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN06) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN07) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN08) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN09) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN10) TYPE(*CHAR) LEN(255)
              DCL        VAR(&PASEJOBNAM) TYPE(*CHAR) LEN(10)
              DCL        VAR(&CHGSCRDIR) TYPE(*CHAR) LEN(4)    /* 1.0.20 */
              DCL        VAR(&CHGDIRCMD) TYPE(*CHAR) LEN(255)  /* 1.0.20 */
@@ -68,6 +81,20 @@
              DCL        VAR(&PYPATHSEP) TYPE(*CHAR) LEN(1) VALUE(' ') /* 1.0.19 */
 
              MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERRORS))
+
+/*----------------------------------------------------------------------------*/
+/* Init return parm values                                                    */
+/*----------------------------------------------------------------------------*/
+             CHGVAR     VAR(&RETURN01) VALUE(' ')
+             CHGVAR     VAR(&RETURN02) VALUE(' ')
+             CHGVAR     VAR(&RETURN03) VALUE(' ')
+             CHGVAR     VAR(&RETURN04) VALUE(' ')
+             CHGVAR     VAR(&RETURN05) VALUE(' ')
+             CHGVAR     VAR(&RETURN06) VALUE(' ')
+             CHGVAR     VAR(&RETURN07) VALUE(' ')
+             CHGVAR     VAR(&RETURN08) VALUE(' ')
+             CHGVAR     VAR(&RETURN09) VALUE(' ')
+             CHGVAR     VAR(&RETURN10) VALUE(' ')
 
 /*----------------------------------------------------------------------------*/
 /* Extract output queue info.                                                 */
@@ -414,6 +441,15 @@
                           OUTFILE(&OLIB/&OFILE) MBROPT(&MBROPT) +
                           PASEJOBNAM(&PASEJOBNAM)
              ENDDO
+
+/*----------------------------------------------------------------------------*/
+/* Extract return parameter values from STDOUTQSH log file                    */
+/*----------------------------------------------------------------------------*/
+             QSHGETPARM RETURN01(&RETURN01) RETURN02(&RETURN02) +
+                          RETURN03(&RETURN03) RETURN04(&RETURN04) +
+                          RETURN05(&RETURN05) RETURN06(&RETURN06) +
+                          RETURN07(&RETURN07) RETURN08(&RETURN08) +
+                          RETURN09(&RETURN09) RETURN10(&RETURN10)
 
  NORMAL:
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Python +

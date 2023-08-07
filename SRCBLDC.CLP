@@ -7,11 +7,12 @@
              DCL        VAR(&TGTRLS) TYPE(*CHAR) LEN(10) +
                           VALUE(*CURRENT)
              DCL        VAR(&VERSION) TYPE(*CHAR) LEN(30) +
-                          VALUE(V1.0.16)
+                          VALUE(V1.0.25)
+             DCL        VAR(&QSHPYTHON) TYPE(*CHAR) LEN(255)
              DCL        VAR(&CMD) TYPE(*CHAR) LEN(512)
              DCL        VAR(&LEN) TYPE(*DEC) LEN(15 5)
 
- /* Add libraries to library list */
+ /** Add libraries to library list */
              ADDLIBLE   LIB(&DESTLIB)
              MONMSG     MSGID(CPF0000)
 
@@ -74,6 +75,14 @@
                           SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
                           TGTRLS(&TGTRLS) /* V1.0.5 */
 
+             CRTCMD     CMD(&DESTLIB/QSHPHPRUN) PGM(QSHPHPRUNC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) +
+                          PRDLIB(&DESTLIB) /* V1.0.24 */
+
+             CRTCLPGM   PGM(&DESTLIB/QSHPHPRUNC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
+                          TGTRLS(&TGTRLS) /* V1.0.24 */
+
              CRTCMD     CMD(&DESTLIB/QSHQRYTMP) PGM(QSHQRYTMPC) +
                           SRCFILE(&DESTLIB/&DESTFILE) +
                           PRDLIB(&DESTLIB) /* V1.0.8 */
@@ -125,6 +134,56 @@
                           SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
                           TGTRLS(&TGTRLS) /* V1.0.14 */
 
+             CRTCMD     CMD(&DESTLIB/QSHEXECSRC) PGM(QSHEXECSCC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) PRDLIB(&DESTLIB) /* 1.0.18 */
+
+             CRTCLPGM   PGM(&DESTLIB/QSHEXECSCC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
+                          TGTRLS(&TGTRLS) /* 1.0.18 */
+
+             CRTCMD     CMD(&DESTLIB/DB2UTIL) PGM(DB2UTILC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) PRDLIB(&DESTLIB) /* 1.0.23 */
+
+             CRTCLPGM   PGM(&DESTLIB/DB2UTILC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
+                          TGTRLS(&TGTRLS) /* 1.0.23 */
+
+             CRTCMD     CMD(&DESTLIB/QSHGETPARM) PGM(QSHGETPARR) +
+                          SRCFILE(&DESTLIB/&DESTFILE) ALLOW(*IPGM +
+                          *BPGM *IMOD *BMOD) PRDLIB(&DESTLIB) /* +
+                          1.0.25 */
+
+             CRTBNDRPG  PGM(&DESTLIB/QSHGETPARR) +
+                          SRCFILE(&DESTLIB/&DESTFILE) +
+                          SRCMBR(QSHGETPARR) DFTACTGRP(*NO) +
+                          REPLACE(*NO) TGTRLS(&TGTRLS) /* 1.0.25 */
+
+             CRTCMD     CMD(&DESTLIB/QSHPYCALL) PGM(QSHPYCALLC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) ALLOW(*IPGM +
+                          *BPGM *IMOD *BMOD) PRDLIB(&DESTLIB) /* +
+                          1.0.25 */
+
+             CRTCLPGM   PGM(&DESTLIB/QSHPYCALLC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
+                          TGTRLS(&TGTRLS) /* 1.0.25 */
+
+             CRTCLPGM   PGM(&DESTLIB/QSHPYCALLT) +
+                          SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
+                          TGTRLS(&TGTRLS) /* 1.0.25 */
+
+             CRTCMD     CMD(&DESTLIB/QSHCALL) PGM(QSHCALLC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) ALLOW(*IPGM +
+                          *BPGM *IMOD *BMOD) PRDLIB(&DESTLIB) /* +
+                          1.0.25 */
+
+             CRTCLPGM   PGM(&DESTLIB/QSHCALLC) +
+                          SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
+                          TGTRLS(&TGTRLS) /* 1.0.25 */
+
+             CRTCLPGM   PGM(&DESTLIB/QSHCALLT) +
+                          SRCFILE(&DESTLIB/&DESTFILE) REPLACE(*NO) +
+                          TGTRLS(&TGTRLS) /* 1.0.25 */
+
  /* Create message file for any custom CPF messages */
  /* Initial use case is to log STDOUT msgs with own CPF ID    */
              CRTMSGF    MSGF(&DESTLIB/QSHMSG) TEXT('Qshell CPF +
@@ -146,6 +205,20 @@
              CRTDTAARA  DTAARA(QSHONI/PYPATH) TYPE(*CHAR) LEN(255) +
                           VALUE('/QOpenSys/pkgs/bin') TEXT('Path to +
                           Python Binaries')
+
+ /* Create and set data area for Python binary location - 1.0.25 */
+             CHGVAR     VAR(&QSHPYTHON) VALUE('/qshpython')
+             CRTDTAARA  DTAARA(QSHONI/QSHPYTHON) TYPE(*CHAR) +
+                          LEN(255) VALUE(&QSHPYTHON) TEXT('Path to +
+                          QSHONI Python Scripts')
+
+/* Attempt to create python script directory - V1.0.25 */
+             MKDIR      DIR(&QSHPYTHON) DTAAUT(*RWX) OBJAUT(*ALL)
+             MONMSG     MSGID(CPF0000)
+
+ /* Create and set data area for PHP binary location - 1.0.24 */
+             CRTDTAARA  DTAARA(QSHONI/PHPPATH) TYPE(*CHAR) LEN(255) +
+                          VALUE(' ') TEXT('Path to PHP Binaries')
 
  /* Create and set data area for open source path loc - 1.0.9 */
              CRTDTAARA  DTAARA(QSHONI/QSHPATHLOC) TYPE(*CHAR) +

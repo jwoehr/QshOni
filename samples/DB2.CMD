@@ -1,7 +1,17 @@
-             CMD        PROMPT('Run Bash Command via Qshell')
-             PARM       KWD(CMDLINE) TYPE(*CHAR) LEN(5000) MIN(1) +
-                          EXPR(*YES) CASE(*MIXED) PROMPT('Bash +
-                          command line')
+/* Text: Execute db2 Query to IFS Output File via bash */
+             CMD        PROMPT('Execute Qsh db2 Query to IFS')
+             PARM       KWD(SQL) TYPE(*CHAR) LEN(1024) MIN(1) +
+                          EXPR(*YES) CASE(*MIXED) PROMPT('SQL to +
+                          execute')
+             PARM       KWD(GENOPT) TYPE(*CHAR) LEN(200) MIN(1) +
+                          EXPR(*YES) CASE(*MIXED) PROMPT('General +
+                          options')
+             PARM       KWD(OUTPUTFILE) TYPE(*CHAR) LEN(255) +
+                          RSTD(*NO) MAX(1) CASE(*MIXED) +
+                          PROMPT('Output IFS file')
+             PARM       KWD(OPTION) TYPE(*CHAR) LEN(10) RSTD(*YES) +
+                          DFT(*REPLACE) VALUES(*ADD *REPLACE) +
+                          PROMPT('IFS file option')
              PARM       KWD(SETPKGPATH) TYPE(*CHAR) LEN(4) +
                           RSTD(*YES) DFT(*YES) VALUES(*NO *YES) +
                           EXPR(*YES) CASE(*MIXED) PROMPT('Set +
@@ -29,7 +39,7 @@
              PARM       KWD(CCSID) TYPE(*CHAR) LEN(10) DFT(*SAME) +
                           SPCVAL((*SAME *SAME)) PROMPT('Coded +
                           character set ID for job')
-             PARM       KWD(PRTSPLF) TYPE(*CHAR) LEN(10) DFT(QSHBASHLOG) PROMPT('Print stdout spool +
+             PARM       KWD(PRTSPLF) TYPE(*CHAR) LEN(10) DFT(DB2UTIL) PROMPT('Print stdout spool +
                           file')
              PARM       KWD(PRTUSRDTA) TYPE(*CHAR) LEN(10) DFT(*NONE) SPCVAL((*NONE ' ')) +
                           PROMPT('Print stdout user data')
@@ -41,19 +51,14 @@
                           hold spool file')
              PARM       KWD(PRTOUTQ) TYPE(QUAL2) MIN(1) +
                           PROMPT('Print stdout to outq')
-             PARM       KWD(OUTFILE) TYPE(QUAL3) MIN(1) PROMPT('File +
-                          to receive output')
-             PARM       KWD(MBROPT) TYPE(*CHAR) LEN(10) RSTD(*YES) +
-                          DFT(*REPLACE) VALUES(*ADD *REPLACE) +
-                          PROMPT('Replace or add records')
              PARM       KWD(PASEJOBNAM) TYPE(*CHAR) LEN(10) +
                           DFT(*DEFAULT) CASE(*MIXED) PROMPT('PASE +
                           fork thread job names')
+             PARM       KWD(VIEWOUTPUT) TYPE(*CHAR) LEN(4) +
+                          RSTD(*YES) DFT(*NO) VALUES(*NO *YES) +
+                          MAX(1) CASE(*MIXED) PROMPT('View output +
+                          file')
  QUAL2:      QUAL       TYPE(*NAME) LEN(10) DFT(*SAME) +
                           SPCVAL((*SAME)) EXPR(*YES)
              QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
-                          SPCVAL((*LIBL)) EXPR(*YES) PROMPT('Library')
- QUAL3:      QUAL       TYPE(*NAME) LEN(10) DFT(STDOUTQSH) +
-                          SPCVAL((*SAME)) EXPR(*YES)
-             QUAL       TYPE(*NAME) LEN(10) DFT(QTEMP) +
                           SPCVAL((*LIBL)) EXPR(*YES) PROMPT('Library')

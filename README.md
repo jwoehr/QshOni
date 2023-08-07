@@ -5,6 +5,14 @@ The main benefit of this wrapper is to be able to integrate Qshell/Pase applicat
 
 There are several ways to build the library. Pick your favorite.
 
+# Check latest version info (Current Version 1.0.25 - 8/4/2023)  
+https://github.com/richardschoen/QshOni/blob/master/VERSION.TXT   
+
+```Two new commands added: QSHCALL and QSYPYCALL to call Python or other open source and return parameters.```
+
+# Check out one-liner Python samples
+https://github.com/richardschoen/QshOni/blob/master/samples/python-oneline-samples.md
+   
 # Installing and Building QSHONI via getrepo-qshoni.sh script 
 
 ***(Important to change SRCCCSID variable in build.sh to your local CCSID before running build.sh. Default=37)***
@@ -110,7 +118,7 @@ The following example calls the ls command to list files for the /tmp directory:
       PRTSTDOUT(*NO)          
       DLTSTDOUT(*YES)
       IFSSTDOUT(*NO)
-      IFSFILE('/tmp/log.txt)
+      IFSFILE('/tmp/log.txt')
       IFSOPT(*REPLACE)
       PRTSPLF(QSHEXECLOG) 
       PRTUSRDTA(*NONE)    
@@ -165,6 +173,93 @@ The following example runs an SQL query with db2util and exports the results as 
 
 **MBROPT** - Output file option. Default: ```*REPLACE``` *REPLACE = replace outfile contents. *ADD = Add to outfile contents. Generally you should replace the file contents. If you want to append to a log file it's recommended to use the IFS output file option to write or append to an IFS file log. This is much more amenable to log readers or processors.
 
+**PASEJOBNAM** - PASE fork thread job names. Set PASE_FORK_JOBNAME environment variable to set forked thread jobs to have a unique name other than: QP0ZSPWP which is the default. Set the value or *DEFAULT=QP0ZSPWP.
+
+# Using the QSHEXECSRC CL command to call a Qsh/Pase command sequence from a classic IBM i source member
+
+The following example calls a QShell source member QSHELL01 stored in source file QSHONI/SOURCE to run the ls command to list files for the /tmp directory: 
+
+ ```
+      QSHEXECSRC SRCFILE(QSHONI/SOURCE)
+      SRCMBR(QSHELL01)      
+      CMDPARM(' ')               
+      DSPSTDOUT(*YES)         
+      LOGSTDOUT(*NO)          
+      PRTSTDOUT(*NO)          
+      DLTSTDOUT(*YES)
+      IFSSTDOUT(*NO)
+      IFSFILE('/tmp/log.txt')
+      IFSOPT(*REPLACE)
+      PRTSPLF(QSHEXECLOG) 
+      PRTUSRDTA(*NONE)    
+      PRTTXT(*NONE)       
+      RMVTMPSCR(*YES)            
+      PROMPTCMD(*NO)                   
+```
+
+Sample QShell source member: ```QSHONI/SOURCE(QSHELL01)``` Type: TXT Text: QShell script to List Files in /tmp folder
+```
+cd /tmp
+ls -l
+```
+
+# QSHEXECSRC command parms
+
+**Overview** - This CL command can be used to run a QSH/PASE command shell script from a classic source physical file member and log the results appropriately.   
+
+The use case would be for an app where you want to store your QShell/PASE/Python/PHP/Etc. scripts as part of your library source and execute those scripts directly from a source physical file.
+
+```Stdout Logging Note:``` During execution, the CL command always creates a temporary outfile in library QTEMP that gets automatically populated with standard output (stdout) from the QSH/PASE command process that gets run. The temporary stdout output file name is: ```QTEMP/STDOUTQSH```. If the file already exists for a subsequent run of the command, the ```QTEMP/STDOUTQSH``` temporary file is automatically cleared before running so each run gets a fresh copy of ```QTEMP/STDOUTQSH```. The ```QTEMP/STDOUTQSH``` temp file gets created automatically always, even if none of the switches such as: ```DSPSTDOUT, LOGSTDOUT, PRTSTDOUT or IFSSTDOUT``` are specified. 
+
+**SRCFILE** - Source physical file where QShell/PASE script is stored. 
+
+**SRCMBR** - Source member name where QShell/PASE script is stored. Script is automatically copied to an IFS based temp file in IFS dir ```/tmp/qsh``` for execution. The IFS temp file is auto-deleted by default after it runs unless you specify *NO to the RMVTMPSCR parameter.    
+
+Changes to your script source members can be made usig via the SEU, RDi or VS Code editors.   
+ 
+**CMDPARM** - Command line parms to pass to the selected Qsh/Pase script that runs. If no parameters are needed simply pass ```' '``` for the CMDPARM value.    
+
+Parameters can be delimited with double quotes if needed.   
+```Ex: "parm1" "parm2" "parm3"```
+
+**SETPKGPATH** - Add the IBM i Open Source Package path to PATH environment variable by calling QSHPATH command before running QSH/PASE commands. Default = *YES.
+
+**DSPSTDOUT** - Display the outfile contents. Nice when debugging. 
+
+**LOGSTDOUT** - Place STDOUT log entries into the current jobs job log. Use this if you want the log info in the IBM i joblog. All STDOUT entries are written as CPF message: **QSS9898**
+
+**PRTSTDOUT** - Print STDOUT to a spool file. Use this if you want a spool file of the log output.
+
+**DLTSTDOUT** - This option insures that the STDOUT IFS temp files get cleaned up after processing. All IFS log files get created in the /tmp/qsh directory.
+
+**IFSSTDOUT** - Copy std output to an IFS file. Nice for aggregating log results to a file.
+
+**IFSFILE** - IFS file for stdout results. Needs to be specified if IFSSTDOUT = *YES.
+
+**IFSOPT** - IFS file option. *REPLACE = replace stdout IFS file. *ADD = Add to stdout IFS file.
+
+**CCSID** - When using the iToolkit component for command access, I originally had some issues with CL commands not working correctly. However I don't currently remember exactly why. This may have been solved, however I recommend still passing a value of 37 unless you are in a non US country. If you set to `*SAME`, the CCSID will stay the same as your current job with no change.
+
+**PRTSPLF** - This option holds the name of the spool file used when PRTSTDOUT = *YES. It's a nice way to customize the stdout log prints. ***Default = QSHEXECLOG***
+
+**PRTUSRDTA** - This option holds the name of the spool file user data used when PRTSTDOUT = *YES. ***Default = *NONE ***
+
+**PRTTXT** - This option holds the name of the spool file print txt to be used when PRTSTDOUT = *YES. ***Default = *NONE ***
+
+**PRTHOLD** - This option determines if the spool file is held if one is generated when PRTSTDOUT = *YES. ***Default = *YES ***
+
+**PRTOUTQ** - This option determines the output queue where the spool file will generated to when PRTSTDOUT = *YES. ***Default = *SAME ***
+
+**OUTFILE** - Output physical file to receive STDOUT from the QSH/PASE command. Default file: ```QTEMP/STDOUTQSH```  This output file ```always gets created and populated```.
+
+**MBROPT** - Output file option. Default: ```*REPLACE``` *REPLACE = replace outfile contents. *ADD = Add to outfile contents. Generally you should replace the file contents. If you want to append to a log file it's recommended to use the IFS output file option to write or append to an IFS file log. This is much more amenable to log readers or processors.  
+
+**PASEJOBNAM** - PASE fork thread job names. Set PASE_FORK_JOBNAME environment variable to set forked thread jobs to have a unique name other than: QP0ZSPWP which is the default. Set the value or *DEFAULT=QP0ZSPWP.
+
+**RMVTMPSCR** - This option determines if the temporary IFS script file is auto-deleted after running. Normally the selection should be *YES to delete the temp file. Otherwise specify *NO if you are debugging for some reason. ***Default = *YES ***  
+
+**PROMPTCMD** - This option determines if the ```QSH``` command is prompted interactively for testing or review of the actual QShell command line with parameter values before running the command. Normally the selection should be *NO since prompting is only needed if testing. Specify *YES if you are debugging for some reason and want the QSH command to prompt on an interactive 5250 session before running. ***Default = *NO ***
+
 
 # Using the QSHBASH CL command to call a bash command sequence
 
@@ -177,7 +272,7 @@ The following example calls the ls command to list files for the /tmp directory 
       PRTSTDOUT(*NO)          
       DLTSTDOUT(*YES)
       IFSSTDOUT(*NO)
-      IFSFILE('/tmp/log.txt)
+      IFSFILE('/tmp/log.txt')
       IFSOPT(*REPLACE)
       PRTSPLF(QSHEXECLOG) 
       PRTUSRDTA(*NONE)    
@@ -234,6 +329,7 @@ The command is a convenience wrapper that can be used to call a bash command wit
 
 **MBROPT** - Output file option. Default: ```*REPLACE``` *REPLACE = replace outfile contents. *ADD = Add to outfile contents. Generally you should replace the file contents. If you want to append to a log file it's recommended to use the IFS output file option to write or append to an IFS file log. This is much more amenable to log readers or processors.
 
+**PASEJOBNAM** - PASE fork thread job names. Set PASE_FORK_JOBNAME environment variable to set forked thread jobs to have a unique name other than: QP0ZSPWP which is the default. Set the value or *DEFAULT=QP0ZSPWP.
 
 # Using the QSHCURL CL command to call a curl command sequence
 
@@ -246,7 +342,7 @@ The following example calls the curl command to download the google home page si
       PRTSTDOUT(*NO)          
       DLTSTDOUT(*YES)
       IFSSTDOUT(*NO)
-      IFSFILE('/tmp/log.txt)
+      IFSFILE('/tmp/log.txt')
       IFSOPT(*REPLACE)
       PRTSPLF(QSHEXECLOG) 
       PRTUSRDTA(*NONE)    
@@ -302,6 +398,7 @@ To install curl from qshell/bash:  yum install curl
 
 **PRTOUTQ** - This option determines the output queue where the spool file will generated to when PRTSTDOUT = *YES. ***Default = *SAME ***
 
+**PASEJOBNAM** - PASE fork thread job names. Set PASE_FORK_JOBNAME environment variable to set forked thread jobs to have a unique name other than: QP0ZSPWP which is the default. Set the value or *DEFAULT=QP0ZSPWP.
 
 # Using the QSHPYRUN CL command to run a Python script via QSHEXEC
 
@@ -309,7 +406,7 @@ The following example calls a helloworld.py script that write to STDOUT
 
  ```
       QSHPYRUN SCRIPTDIR('/pythonapps')       
-      SCRIPTFILE(hello.py)           
+      SCRIPTFILE('hello.py')           
       ARGS(Parm1 Parm2)              
       PYVERSION(3)                   
       DSPSTDOUT(*YES)         
@@ -317,7 +414,7 @@ The following example calls a helloworld.py script that write to STDOUT
       PRTSTDOUT(*NO)          
       DLTSTDOUT(*YES)
       IFSSTDOUT(*NO)
-      IFSFILE('/tmp/log.txt)
+      IFSFILE('/tmp/log.txt')
       IFSOPT(*REPLACE)
       PRTSPLF(QSHPYRUN) 
       PRTUSRDTA(*NONE)    
@@ -341,6 +438,15 @@ The following example calls a helloworld.py script that write to STDOUT
 **PYPATH** - The this is the directory path to your Python binaries (python/python3). Hopefully you have already installed the Yum versions so the default path should be good. Leave value set to `*DEFAULT`. **Default= /QOpenSys/pkgs/bin**. The default path lives in the **PYPATH** data area in the **PYONI** library.
 
 **SETPKGPATH** - Add the IBM i Open Source Package path to PATH environment variable by calling QSHPATH command before running QSH/PASE commands. Default = *YES.
+
+**USEVENV** - Use virtual environment - If set to *YES, run your Python script using an existing Python virtual environment as specified in the Python virtual environment path. The IFS directory and virtual environment must exist. Default = *No.
+
+```
+Note: When using virtual environment, you will need to make sure the PYPATH data area value is set to ' ' or pass ' '   
+to the PYPATH parameter to make sure the system level python binary does not picked up. Each venv has its own python executable
+```
+
+**VENVPATH** - Virtual environment path - Specify an existing IFS directory that also contains a valid Python virtual environment. Cannot be blank or non-existant if USEVENV=*yes or the QSHPYRUN command will fail.
 
 **DSPSTDOUT** - Display the outfile contents. Nice when debugging. 
 
@@ -372,6 +478,9 @@ The following example calls a helloworld.py script that write to STDOUT
 
 **MBROPT** - Output file option. Default: ```*REPLACE``` *REPLACE = replace outfile contents. *ADD = Add to outfile contents. Generally you should replace the file contents. If you want to append to a log file it's recommended to use the IFS output file option to write or append to an IFS file log. This is much more amenable to log readers or processors.
 
+**PASEJOBNAM** - PASE fork thread job names. Set PASE_FORK_JOBNAME environment variable to set forked thread jobs to have a unique name other than: QP0ZSPWP which is the default. Set the value or *DEFAULT=QP0ZSPWP.
+
+**DEBUGCMD** - Debug QSHEXEC command - If set to *YES, your job must be running interactively and it will display the command line that QSHPYRUN composed to execute via QSHEXEC before it runs. This is good for debugging or you are curious what the exec QSHEXEC command will look like. Under the covers QSHPYRUN utilizes the QSHEXEC command to run the Python command line. 
 
 # Using the QSHLOGSCAN CL command to scan the stdout outfile for the selected value after QSHEXEC has completed. 
 
@@ -509,6 +618,206 @@ The following example checks to see if a web service instance is running on port
 
 **OUTFILE** - This parameter is used to specify a temporary output file to create in QTEMP library for the job. Default name - TCPTMP001
 
+# Using the QSHPYCALL CL command to run a Python script via QSHEXEC and return up to 10 - 255 character parameter values  
 
+**Note: The QSHPYCALL command must be embedded into a CL program because it contains CL return variables.   
 
+The following example calls a script named ```pycallparm1.py``` that returns parameters from within an existing program.   
+```See CL sample QSHPYCALLT in the QSHONI library```
 
+ ```
+       DCL        VAR(&RETURN01) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN02) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN03) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN04) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN05) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN06) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN07) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN08) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN09) TYPE(*CHAR) LEN(255)     
+       DCL        VAR(&RETURN10) TYPE(*CHAR) LEN(255)     
+
+      QSHPYCALL SCRIPTDIR('/qshpython')       
+      SCRIPTFILE('pycallparm1.py')           
+      ARGS('--parm1=inputvalue1')              
+      PYVERSION(3)                   
+      DSPSTDOUT(*YES)         
+      LOGSTDOUT(*NO)          
+      PRTSTDOUT(*NO)          
+      DLTSTDOUT(*YES)
+      IFSSTDOUT(*NO)
+      IFSFILE('/tmp/log.txt')
+      IFSOPT(*REPLACE)
+      PRTSPLF(QSHPYRUN) 
+      PRTUSRDTA(*NONE)    
+      PRTTXT(*NONE)
+      RETURN01(&RETURN01)
+      RETURN01(&RETURN02)
+      RETURN01(&RETURN03)
+      RETURN01(&RETURN04)
+      RETURN01(&RETURN05)
+      RETURN01(&RETURN06)
+      RETURN01(&RETURN07)
+      RETURN01(&RETURN08)
+      RETURN01(&RETURN09)
+      RETURN01(&RETURN10)
+```
+
+# QSHPYCALL command parms
+
+**Overview** - This CL command can be used to run a Python script via QSHEXEC and return up to 10 parameter values from the STDOUt log info. Note: The CL command must be embeddedin a CL program since it returns parameter values to the calling CL, RPG or COBOL program. 
+
+```Stdout Logging Note:``` During execution, the CL command always creates a temporary outfile in library QTEMP that gets automatically populated with standard output (stdout) from the QSH/PASE command process that gets run. The temporary stdout output file name is: ```QTEMP/STDOUTQSH```. If the file already exists for a subsequent run of the command, the ```QTEMP/STDOUTQSH``` temporary file is automatically cleared before running so each run gets a fresh copy of ```QTEMP/STDOUTQSH```. The ```QTEMP/STDOUTQSH``` temp file gets created automatically always, even if none of the switches such as: ```DSPSTDOUT, LOGSTDOUT, PRTSTDOUT or IFSSTDOUT``` are specified. 
+
+**SCRIPTDIR** - The IFS directory location for the Python script. **Ex: /python**
+
+**SCRIPTFILE** - The script file name you want to call without the directory path. The PYRUN command puts it all together. **Ex: hello.py**
+
+**ARGS** - Command line parameter argument list. Up to 40 - 200 byte argument/parameter values can be passed to a Python script call. Each parm is automatically trimmed. Do NOT put double quotes around the parms or your program call may get errors because your parameters get compromised with extra double quotes. The double quotes are already added automatically inside the CL command processing program. Single quotes are allowed around your parmaeter data though if desired:  Ex: **'My Parm Value 1' 'My Parm Value 2'**
+
+**PYVERSION** - The Python version you want to use. It should be set to either **2 or 2.7** for Python 2 or **3, 3.6 or 3.9** for Python 3.
+
+**PYPATH** - The this is the directory path to your Python binaries (python/python3). Hopefully you have already installed the Yum versions so the default path should be good. Leave value set to `*DEFAULT`. **Default= /QOpenSys/pkgs/bin**. The default path lives in the **PYPATH** data area in the **PYONI** library.
+
+**SETPKGPATH** - Add the IBM i Open Source Package path to PATH environment variable by calling QSHPATH command before running QSH/PASE commands. Default = *YES.
+
+**USEVENV** - Use virtual environment - If set to *YES, run your Python script using an existing Python virtual environment as specified in the Python virtual environment path. The IFS directory and virtual environment must exist. Default = *No.
+
+```
+Note: When using virtual environment, you will need to make sure the PYPATH data area value is set to ' ' or pass ' '   
+to the PYPATH parameter to make sure the system level python binary does not picked up. Each venv has its own python executable
+```
+
+**VENVPATH** - Virtual environment path - Specify an existing IFS directory that also contains a valid Python virtual environment. Cannot be blank or non-existant if USEVENV=*yes or the QSHPYRUN command will fail.
+
+**DSPSTDOUT** - Display the outfile contents. Nice when debugging. 
+
+**LOGSTDOUT** - Place STDOUT log entries into the current jobs job log. Use this if you want the log info in the IBM i joblog. All STDOUT entries are written as CPF message: **QSS9898**
+
+**PRTSTDOUT** - Print STDOUT to a spool file. Use this if you want a spool file of the log output.
+
+**DLTSTDOUT** - This option insures that the STDOUT IFS temp files get cleaned up after processing. All IFS log files get created in the /tmp/qsh directory.
+
+**IFSSTDOUT** - Copy std output to an IFS file. Nice for aggregating log results to a file.
+
+**IFSFILE** - IFS file for stdout results. Needs to be specified if IFSSTDOUT = *YES.
+
+**IFSOPT** - IFS file option. *REPLACE = replace stdout IFS file. *ADD = Add to stdout IFS file.
+
+**CCSID** - When using the iToolkit component for command access, I originally had some issues with CL commands not working correctly. However I don't currently remember exactly why. This may have been solved, however I recommend still passing a value of 37 unless you are in a non US country. If you set to `*SAME`, the CCSID will stay the same as your current job with no change.
+
+**PRTSPLF** - This option holds the name of the spool file used when PRTSTDOUT = *YES. It's a nice way to customize the stdout log prints. ***Default = QSHEXECLOG***
+
+**PRTUSRDTA** - This option holds the name of the spool file user data used when PRTSTDOUT = *YES. ***Default = *NONE ***
+
+**PRTTXT** - This option holds the name of the spool file print txt to be used when PRTSTDOUT = *YES. ***Default = *NONE ***
+
+**PRTHOLD** - This option determines if the spool file is held if one is generated when PRTSTDOUT = *YES. ***Default = *YES ***
+
+**PRTOUTQ** - This option determines the output queue where the spool file will generated to when PRTSTDOUT = *YES. ***Default = *SAME ***
+
+**OUTFILE** - Output physical file to receive STDOUT from the QSH/PASE command. Default file: ```QTEMP/STDOUTQSH```  This output file ```always gets created and populated```.
+
+**MBROPT** - Output file option. Default: ```*REPLACE``` *REPLACE = replace outfile contents. *ADD = Add to outfile contents. Generally you should replace the file contents. If you want to append to a log file it's recommended to use the IFS output file option to write or append to an IFS file log. This is much more amenable to log readers or processors.
+
+**PASEJOBNAM** - PASE fork thread job names. Set PASE_FORK_JOBNAME environment variable to set forked thread jobs to have a unique name other than: QP0ZSPWP which is the default. Set the value or *DEFAULT=QP0ZSPWP.
+
+**DEBUGCMD** - Debug QSHEXEC command - If set to *YES, your job must be running interactively and it will display the command line that QSHPYRUN composed to execute via QSHEXEC before it runs. This is good for debugging or you are curious what the exec QSHEXEC command will look like. Under the covers QSHPYRUN utilizes the QSHEXEC command to run the Python command line. 
+
+**RETURN01 - RETURN10** - These 255 character parameters can return values from the called Python script if it writes return values to the STDOUT log using the Python print() command.    
+
+The special format we look for to return values from STDOUT is:     
+```RETURNPARM01: I am return value 1```   
+``` - ```   
+```RETURNPARM10: I am return value 10```   
+
+# Using the QSHCALL CL command to call a Qsh/Pase command sequence and return up to 10 - 255 character parameters.  
+
+**Note: The QSHCALL command must be embedded into a CL program because it contains CL return variables.  
+
+The following example calls a script named ```pycallparm1.py``` that returns parameters from within an existing program.   
+```See CL sample QSHCALLT in the QSHONI library```
+
+```
+      DCL        VAR(&RETURN01) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN02) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN03) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN04) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN05) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN06) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN07) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN08) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN09) TYPE(*CHAR) LEN(255)     
+      DCL        VAR(&RETURN10) TYPE(*CHAR) LEN(255)     
+
+      QSHCALL CMDLINE('python3 /qshpython/pycallparm1.py --parm1=inputvalue1')   
+      DSPSTDOUT(*YES)         
+      LOGSTDOUT(*NO)          
+      PRTSTDOUT(*NO)          
+      DLTSTDOUT(*YES)
+      IFSSTDOUT(*NO)
+      IFSFILE('/tmp/log.txt')
+      IFSOPT(*REPLACE)
+      PRTSPLF(QSHEXECLOG) 
+      PRTUSRDTA(*NONE)    
+      PRTTXT(*NONE)       
+      RETURN01(&RETURN01)
+      RETURN01(&RETURN02)
+      RETURN01(&RETURN03)
+      RETURN01(&RETURN04)
+      RETURN01(&RETURN05)
+      RETURN01(&RETURN06)
+      RETURN01(&RETURN07)
+      RETURN01(&RETURN08)
+      RETURN01(&RETURN09)
+      RETURN01(&RETURN10)
+```
+
+# QSHCALL command parms
+
+**Overview** - This CL command can be used to run a QSH/PASE command and log the results appropriately. 
+
+```Stdout Logging Note:``` During execution, the CL command always creates a temporary outfile in library QTEMP that gets automatically populated with standard output (stdout) from the QSH/PASE command process that gets run. The temporary stdout output file name is: ```QTEMP/STDOUTQSH```. If the file already exists for a subsequent run of the command, the ```QTEMP/STDOUTQSH``` temporary file is automatically cleared before running so each run gets a fresh copy of ```QTEMP/STDOUTQSH```. The ```QTEMP/STDOUTQSH``` temp file gets created automatically always, even if none of the switches such as: ```DSPSTDOUT, LOGSTDOUT, PRTSTDOUT or IFSSTDOUT``` are specified. 
+
+**CMDLINE** - Qsh/Pase command line sequence to run. Semicolons can be used to run multiple commands.
+
+**SETPKGPATH** - Add the IBM i Open Source Package path to PATH environment variable by calling QSHPATH command before running QSH/PASE commands. Default = *YES.
+
+**DSPSTDOUT** - Display the outfile contents. Nice when debugging. 
+
+**LOGSTDOUT** - Place STDOUT log entries into the current jobs job log. Use this if you want the log info in the IBM i joblog. All STDOUT entries are written as CPF message: **QSS9898**
+
+**PRTSTDOUT** - Print STDOUT to a spool file. Use this if you want a spool file of the log output.
+
+**DLTSTDOUT** - This option insures that the STDOUT IFS temp files get cleaned up after processing. All IFS log files get created in the /tmp/qsh directory.
+
+**IFSSTDOUT** - Copy std output to an IFS file. Nice for aggregating log results to a file.
+
+**IFSFILE** - IFS file for stdout results. Needs to be specified if IFSSTDOUT = *YES.
+
+**IFSOPT** - IFS file option. *REPLACE = replace stdout IFS file. *ADD = Add to stdout IFS file.
+
+**CCSID** - When using the iToolkit component for command access, I originally had some issues with CL commands not working correctly. However I don't currently remember exactly why. This may have been solved, however I recommend still passing a value of 37 unless you are in a non US country. If you set to `*SAME`, the CCSID will stay the same as your current job with no change.
+
+**PRTSPLF** - This option holds the name of the spool file used when PRTSTDOUT = *YES. It's a nice way to customize the stdout log prints. ***Default = QSHEXECLOG***
+
+**PRTUSRDTA** - This option holds the name of the spool file user data used when PRTSTDOUT = *YES. ***Default = *NONE ***
+
+**PRTTXT** - This option holds the name of the spool file print txt to be used when PRTSTDOUT = *YES. ***Default = *NONE ***
+
+**PRTHOLD** - This option determines if the spool file is held if one is generated when PRTSTDOUT = *YES. ***Default = *YES ***
+
+**PRTOUTQ** - This option determines the output queue where the spool file will generated to when PRTSTDOUT = *YES. ***Default = *SAME ***
+
+**OUTFILE** - Output physical file to receive STDOUT from the QSH/PASE command. Default file: ```QTEMP/STDOUTQSH```  This output file ```always gets created and populated```.
+
+**MBROPT** - Output file option. Default: ```*REPLACE``` *REPLACE = replace outfile contents. *ADD = Add to outfile contents. Generally you should replace the file contents. If you want to append to a log file it's recommended to use the IFS output file option to write or append to an IFS file log. This is much more amenable to log readers or processors.
+
+**PASEJOBNAM** - PASE fork thread job names. Set PASE_FORK_JOBNAME environment variable to set forked thread jobs to have a unique name other than: QP0ZSPWP which is the default. Set the value or *DEFAULT=QP0ZSPWP.  
+
+**RETURN01 - RETURN10** - These 255 character parameters can return values from the called Python script if it writes return values to the STDOUT log using the Python print() command.   
+
+The special format we look for to return values from STDOUT is:     
+```RETURNPARM01: I am return value 1```   
+``` - ```   
+```RETURNPARM10: I am return value 10```   

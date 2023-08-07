@@ -61,3 +61,75 @@ V1.0.16 - 11/28/2022
  Default outfile member option is: *REPLACE  (Available options - *ADD/*REPLACE)           
  You can replace or add to the contents of an outfile. Generally *REPLACE should be used.  
  However you can copy the outfile anywhere you want after the commands complete.           
+V1.0.17 - 12/3/2022                                                                               
+-Added USEVENV and VENVPATH variables to the QSHPYRUN command.                                    
+ If USEVENV value is *YES then a valid virtual environment base directory name must be specified  
+ for the VENVPATH value. And it must be configured as a Python virtual environment.               
+V1.0.18 - 2/25/2023                                                                        
+-Added QSHEXECSRC command to execute a QShell .sh script stored in a source physical file. 
+V1.0.19 - 3/18/2023                                                                                 
+-Updated QSHPYRUNC to support running python binary without a qualified path. The qualified path    
+ can apparently cause issues when running python in a virtual environment. The wrong python binary  
+ may get called.                                                                                    
+-When using QSHPYRUN with a virtual environment, the PYPATH parm can be changed from *DEFAULT to ' '
+ or change the PYPATH data area to blanks instead of /QOpenSys/pkgs/bin and the path will never     
+ get qualified and will always use the current binary search path.                                  
+V1.0.20 - 3/24/2023                                                                                    
+-Updated QSHPYRUN to support a 'cd /scriptpath' directory change before running a Python script.       
+ The new CHGSCRDIR parameter will support fully qualifying or not qualifying entire script path.       
+ If *NO is specified, script path is fully qualified. (Default and same as previous versions)          
+ If *YES is specified, a 'cd /scriptpath" is performed and script path is not fully qualified.         
+V1.0.21 - 4/13/2023                                                    
+-Updated QSHEXECC to create data area QTEMP/QSHRTNCOD to capture the    
+ QSH exit return code value so it can be checked from a CL/RPG program.
+V1.0.22 - 4/14/2023                                                  
+-Updated QSHEXECC to create data area QTEMP/STDOUTIFS to capture the 
+ temporary STDOUT IFS file name used to capture QSH/PASE output.     
+ This value is only useful if you use the DLTSTDOUT(*NO) value.      
+ If DLTSTDOUT(*YES) is specified, the temp file gets removed after   
+ the process completes, although the STDOUT contents do get copied   
+ to temp file QTEMP/STDOUTQSH before removing the temporary IFS file.
+ Under normal circumstances you should always use DLTSTDOUT(*YES).   
+V1.0.23 - 5/1/2023                                                   
+-Added PASEJOBNAM parm to the following commands:                    
+QSHEXEC, QSHEXECSRC, QSHBASH, QSHPYRUN, QSHCURL                     
+If set to *DEFAULT, standard thread names are used: QP0ZSPWP        
+If value is set for job name, that job name is applied to           
+all forked/spawned thread jobs by automatically adding the          
+environment variable PASE_FORK_JOBNAME with selected job name   
+before launching and thread jobs. 
+V1.0.24 - 8/4/2023
+-Created QSHPYCALL command. This is a variation of the QSHPYRUN cmd. It
+ will run a Python script and return parameter values as long as they
+ are prefixed in STDOUT with: RETURNPARM01: - RETURNPARM10:
+ Statements can be written to STDOUT using the print() statement
+ in a Python script. See sample script: ```pycallparl1.py`` on the
+ GitHub site.
+ Example STDOUT value: "RETURNPARM01:I am return value 1"
+ Would return: "I am return value 1" to the QSHPYCALL command
+ return parameter 1.
+ QSHPYCALL is mainly a convenience wrapper for RPG/CL/COBOL developers
+ who might want to do some quick work in Python and return it for
+ use in their RPG/CL/COBOL programs. They are generally used to the
+ call/parm convention of RPG/CL/COBOL programming.    
+
+-Created QSHCALL command. This is a variation of the QSHEXEC cmd. It  
+ will run a Python script and return parameter values as long as they 
+ are prefixed in STDOUT with: RETURNPARM01: - RETURNPARM10:           
+ Statements can be written to STDOUT using the print() statement      
+ in a Python script. See sample script: pycallparl1.py on the         
+ GitHub site.                                                         
+ Example STDOUT value: "RETURNPARM01:I am return value 1"             
+ Would return: "I am return value 1" to the QSHPYCALL command         
+ return parameter 1.                                                  
+ QSHCALL is mainly a convenience wrapper for RPG/CL/COBOL developers  
+ who might want to do some quick work in Python and return it for     
+ use in their RPG/CL/COBOL programs. They are generally used to the   
+ call/parm convention of RPG/CL/COBOL programming.   
+
+-Qualify RUNSQL command as QSYS/RUNSQL in QSHQRYTMPC.
+  Ran into a case where a customer has their own custom RUNSQL
+  command which was totally different than QSYS/RUNSQL in the
+  system library list. This cause the command to crash due to
+  having different parameters. Qualifying RUNSQL to QSYS should
+  resolve this issue.

@@ -39,7 +39,7 @@ SRCTEXT="Run Bash Command via Qshell"
 cpy_member
 
 CURFILE="QSHEXEC.CMD"                
-SRCTEXT="Run Bash Command via Qshell"                          
+SRCTEXT="Run QShell Command Line"                          
 cpy_member
 
 CURFILE="QSHEXECC.CLLE"
@@ -144,6 +144,62 @@ cpy_member
 
 CURFILE="QSHPROFILE.TXT"
 SRCTEXT="User QShell .profile template for Opn Src Pkgs"
+cpy_member
+
+CURFILE="QSHEXECSRC.CMD"                
+SRCTEXT="Run QShell .sh script from Source File Member"
+cpy_member
+
+CURFILE="QSHEXECSCC.CLLE"
+SRCTEXT="Run QShell .sh script from Source File Member"
+cpy_member
+
+CURFILE="DB2UTIL.CMD"                
+SRCTEXT="Execute db2util Query to IFS Output File via bash"
+cpy_member
+
+CURFILE="DB2UTILC.CLLE"
+SRCTEXT="Execute db2util Query to IFS Output File via bash"
+cpy_member
+
+CURFILE="QSHPYCALL.CMD"
+SRCTEXT="Run Python Script via Qshell and Return Parms"
+cpy_member
+
+CURFILE="QSHPYCALLC.CLLE"
+SRCTEXT="Run Python Script via Qshell and Return Parms"
+cpy_member
+
+CURFILE="QSHPYCALLT.CLLE"
+SRCTEXT="Test Call to QSHPYCALL"
+cpy_member
+
+CURFILE="QSHGETPARM.CMD"
+SRCTEXT="Scan Qshell Log File for Parameter Values"
+cpy_member
+
+CURFILE="QSHGETPARR.RPGLE"
+SRCTEXT="Run Python Script via Qshell and Return Parms"
+cpy_member
+
+CURFILE="QSHPHPRUN.CMD"
+SRCTEXT="Run PHP Script via QShell"
+cpy_member
+
+CURFILE="QSHPHPRUNC.CLLE"
+SRCTEXT="Run PHP Script via QShell"
+cpy_member
+
+CURFILE="QSHCALL.CMD"
+SRCTEXT="Run QShell Command Line and Return Parms"
+cpy_member
+
+CURFILE="QSHCALLC.CLLE"
+SRCTEXT="Run QShell Command Line and Return Parms"
+cpy_member
+
+CURFILE="QSHCALLT.CLLE"
+SRCTEXT="Test Call to QSHCALL"
 cpy_member
 
 CURFILE="SRCBLDC.CLP"

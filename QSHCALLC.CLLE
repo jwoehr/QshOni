@@ -2,11 +2,24 @@
                           &LOGSTDOUT &PRTSTDOUT &DLTSTDOUT +
                           &IFSSTDOUT &IFSFILE &IFSOPT &CCSID +
                           &PRTSPLF &PRTUSRDTA &PRTTXT &PRTHOLD +
-                          &PRTOUTQALL &OUTFILE &MBROPT &PASEJOBNAM)
+                          &PRTOUTQALL &OUTFILE &MBROPT &PASEJOBNAM +
+                          &RETURN01 &RETURN02 &RETURN03 &RETURN04 +
+                          &RETURN05 &RETURN06 &RETURN07 &RETURN08 +
+                          &RETURN09 &RETURN10)
 
 /*----------------------------------------------------------------------------*/
 /* Variables                                                                  */
 /*----------------------------------------------------------------------------*/
+             DCL        VAR(&RETURN01) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN02) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN03) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN04) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN05) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN06) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN07) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN08) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN09) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&RETURN10) TYPE(*CHAR) LEN(255)
              DCL        VAR(&PASEJOBNAM) TYPE(*CHAR) LEN(10)
              DCL        VAR(&MBROPT) TYPE(*CHAR) LEN(10)
              DCL        VAR(&OUTFILE) TYPE(*CHAR) LEN(20)
@@ -82,6 +95,21 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
+/* Init return parm values                                                    */
+/*----------------------------------------------------------------------------*/
+             CHGVAR     VAR(&RETURN01) VALUE(' ')
+             CHGVAR     VAR(&RETURN02) VALUE(' ')
+             CHGVAR     VAR(&RETURN03) VALUE(' ')
+             CHGVAR     VAR(&RETURN04) VALUE(' ')
+             CHGVAR     VAR(&RETURN05) VALUE(' ')
+             CHGVAR     VAR(&RETURN06) VALUE(' ')
+             CHGVAR     VAR(&RETURN07) VALUE(' ')
+             CHGVAR     VAR(&RETURN08) VALUE(' ')
+             CHGVAR     VAR(&RETURN09) VALUE(' ')
+             CHGVAR     VAR(&RETURN10) VALUE(' ')
+
+
+/*----------------------------------------------------------------------------*/
 /* Create return code data area */
 /*----------------------------------------------------------------------------*/
              CHKOBJ     OBJ(QTEMP/QSHRTNCOD) OBJTYPE(*DTAARA)
@@ -129,7 +157,7 @@
                 IF         COND(&IFSFILE *EQ ' ') THEN(SNDPGMMSG +
                              MSGID(CPF9898) MSGF(QCPFMSG) +
                              MSGDTA('IFSSTDOUT was set to *YES, but no +
-                             IFS file was specified. QSHEXEC +
+                             IFS file was specified. QSHCALL +
                              cancelled') MSGTYPE(*ESCAPE))
              ENDDO
 
@@ -161,7 +189,7 @@
              MONMSG     MSGID(CPF0000) EXEC(DO)
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Output +
                           library' |> &OLIB |> 'does not exist. +
-                          QSHEXEC command cancelled') TOPGMQ(*PRV) +
+                          QSHCALL command cancelled') TOPGMQ(*PRV) +
                           MSGTYPE(*ESCAPE)
              ENDDO
 
@@ -186,7 +214,7 @@
              MONMSG     MSGID(CPF0000) EXEC(DO)
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Output +
                           file' |> &OLIB |< '/' |< &OFILE |> 'does +
-                          not exist. QSHEXEC command cancelled') +
+                          not exist. QSHCALL command cancelled') +
                           TOPGMQ(*PRV) MSGTYPE(*ESCAPE)
              ENDDO
 
@@ -313,7 +341,7 @@ DONECOMP:
              MONMSG     MSGID(CPF0000) EXEC(DO)
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Error +
                           copying log to IFS file' |> &IFSFILE |> +
-                          '- QSHEXEC cancelled') MSGTYPE(*ESCAPE)
+                          '- QSHCALL cancelled') MSGTYPE(*ESCAPE)
              ENDDO
              ENDDO
 
@@ -366,6 +394,15 @@ DONECOMP:
                           the joblog') MSGTYPE(*ESCAPE)
              ENDDO
 
+/*----------------------------------------------------------------------------*/
+/* Extract return parameter values from STDOUTQSH log file                    */
+/*----------------------------------------------------------------------------*/
+             QSHGETPARM RETURN01(&RETURN01) RETURN02(&RETURN02) +
+                          RETURN03(&RETURN03) RETURN04(&RETURN04) +
+                          RETURN05(&RETURN05) RETURN06(&RETURN06) +
+                          RETURN07(&RETURN07) RETURN08(&RETURN08) +
+                          RETURN09(&RETURN09) RETURN10(&RETURN10)
+
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('QShell +
                           command completed and logged to outfile' +
                           |> &OLIB |< '/' |< &OFILE) MSGTYPE(*COMP)
@@ -396,7 +433,7 @@ ERRORS:
              MONMSG     MSGID(CPF0000) EXEC(DO)
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Error +
                           copying log to IFS file' |> &IFSFILE |> +
-                          '- QSHEXEC cancelled') MSGTYPE(*ESCAPE)
+                          '- QSHCALL cancelled') MSGTYPE(*ESCAPE)
              ENDDO
              ENDDO
 
@@ -412,7 +449,7 @@ ERRORS:
              /* Prevent endless loop if OVRPRTF fails */
              MONMSG     MSGID(CPF0000) EXEC(DO)
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Error +
-                          overriding print file - QSHEXEC +
+                          overriding print file - QSHCALL +
                           cancelled') MSGTYPE(*ESCAPE)
              ENDDO
              ENDDO
@@ -425,7 +462,7 @@ ERRORS:
              /* Prevent endless loop if OVRPRTF fails */
              MONMSG     MSGID(CPF0000) EXEC(DO)
              SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Error +
-                          overriding print file - QSHEXEC +
+                          overriding print file - QSHCALL +
                           cancelled') MSGTYPE(*ESCAPE)
              ENDDO
              ENDDO

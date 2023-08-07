@@ -1,13 +1,22 @@
-             PGM        PARM(&CMDLINE &SETPKGPATH &DSPSTDOUT +
-                          &LOGSTDOUT &PRTSTDOUT &DLTSTDOUT +
-                          &IFSSTDOUT &IFSFILE &IFSOPT &CCSID +
-                          &PRTSPLF &PRTUSRDTA &PRTTXT &PRTHOLD +
-                          &PRTOUTQALL &PASEJOBNAM)
+/* Text: Execute db2 Query to IFS Output File via bash */
+             PGM        PARM(&SQL &GENOPT &OUTPUTFILE &OPTION +
+                          &SETPKGPATH &DSPSTDOUT &LOGSTDOUT +
+                          &PRTSTDOUT &DLTSTDOUT &IFSSTDOUT &IFSFILE +
+                          &IFSOPT &CCSID &PRTSPLF &PRTUSRDTA +
+                          &PRTTXT &PRTHOLD &PRTOUTQALL &PASEJOBNAM +
+                          &VIEWOUTPUT)
 
 /*----------------------------------------------------------------------------*/
 /* Variables                                                                  */
 /*----------------------------------------------------------------------------*/
-             DCL        VAR(&PASEJOBNAM) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&GENOPT) TYPE(*CHAR) LEN(200)
+             DCL        VAR(&VIEWOUTPUT) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&SQL) TYPE(*CHAR) LEN(1024)
+             DCL        VAR(&OUTPUTFILE) TYPE(*CHAR) LEN(255)
+             DCL        VAR(&OUTPUTFMT) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JSONFMT) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JSONEXPORT) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&OPTION) TYPE(*CHAR) LEN(10)
              DCL        VAR(&PRTHOLD) TYPE(*CHAR) LEN(4)
              DCL        VAR(&PRTOUTQALL) TYPE(*CHAR) LEN(20)
              DCL        VAR(&PRTOUTQ) TYPE(*CHAR) LEN(10)
@@ -27,6 +36,7 @@
              DCL        VAR(&PRTTXT) TYPE(*CHAR) LEN(30)
              DCL        VAR(&QT) TYPE(*CHAR) LEN(1) VALUE('''')
              DCL        VAR(&CCSID) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&PASEJOBNAM) TYPE(*CHAR) LEN(10)
 
 /*----------------------------------------------------------------------------*/
 /* MONITOR FOR GLOBAL ERROR. ANY ERROR IS A CAUSE TO BLOW OUT OF HERE         */
@@ -36,20 +46,41 @@
 
 /*----------------------------------------------------------------------------*/
 /* Extract output queue info.                                                 */
-/*----------------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------------*/
              CHGVAR     VAR(&PRTOUTQ) VALUE(%SST(&PRTOUTQALL 1 10))
              CHGVAR     VAR(&PRTOUTQLIB) VALUE(%SST(&PRTOUTQALL 11 10))
 
 /*----------------------------------------------------------------------------*/
 /* MAIN                                                                       */
 /*----------------------------------------------------------------------------*/
+             /* Output file is required */
+             IF         COND(&OUTPUTFILE *EQ ' ') THEN(DO)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('Output +
+                          file name must be specified') +
+                          MSGTYPE(*ESCAPE)
+             ENDDO
 
-             /* Build curl command line to pass to qshell */
-             CHGVAR     VAR(&CURLCMDLIN) VALUE('curl' |>  +
-                          &CMDLINE)
+             /* Check for output file and replace if selected and exists */
+             QSHONI/QSHIFSCHK FILNAM(&OUTPUTFILE)
+             /* Not Found. Do nothing special */
+             MONMSG     MSGID(CPF9898) EXEC(DO)
+             ENDDO
+             /* Found. Delete if selected */
+             MONMSG     MSGID(CPF9897) EXEC(DO)
+             /* Delete output file if found and replace */
+             IF         COND(&OPTION *EQ *REPLACE) THEN(DO)
+             ERASE      OBJLNK(&OUTPUTFILE)
+             ENDDO
+             ENDDO
 
-             /* Run the curl command via QSHEXEC */
-             QSHONI/QSHEXEC CMDLINE(&CURLCMDLIN) +
+
+             /* Build db2 command line to pass to qshell or bash  */
+             CHGVAR     VAR(&CURLCMDLIN) VALUE('db2' |> +
+                          &GENOPT |> '"' |< &SQL |< '" >>' |> +
+                          &OUTPUTFILE)
+
+             /* Run the db2 command via QSHBASH */
+             QSHONI/QSHBASH CMDLINE(&CURLCMDLIN) +
                           SETPKGPATH(&SETPKGPATH) +
                           DSPSTDOUT(&DSPSTDOUT) +
                           LOGSTDOUT(&LOGSTDOUT) +
@@ -60,16 +91,22 @@
                           PRTSPLF(&PRTSPLF) PRTUSRDTA(&PRTUSRDTA) +
                           PRTTXT(&PRTTXT) PRTHOLD(&PRTHOLD) +
                           PRTOUTQ(&PRTOUTQLIB/&PRTOUTQ) +
-                          PASEJOBNAM(&PASEJOBNAM)
+                          MBROPT(*REPLACE) PASEJOBNAM(&PASEJOBNAM)
 
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('QShell +
-                          curl command completed') MSGTYPE(*COMP)
+             /* View output file after creation if selected */
+             IF         COND(&VIEWOUTPUT *EQ *YES) THEN(DO)
+             EDTF       STMF(&OUTPUTFILE)
+             ENDDO
+
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('db2 +
+                          command completed to file' |> +
+                          &OUTPUTFILE) MSGTYPE(*COMP)
 
              RETURN
 
 ERRORS:
-             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('QShell +
-                          curl command failed') MSGTYPE(*ESCAPE)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('db2 +
+                          command failed') MSGTYPE(*ESCAPE)
 
  ENDPGM:
              ENDPGM
